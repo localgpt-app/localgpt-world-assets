@@ -1,31 +1,31 @@
-# reverie-assets
+# localgpt-world-assets
 
-The 3D models and starter music bundled with
-[Reverie](https://github.com/localgpt-app/reverie), a desktop app that builds a
-3D world for every song. Everything here is public domain under
-[CC0 1.0](LICENSE).
+LocalGPT's world asset pack: the 3D models and starter music bundled with
+[LocalGPT Verse](https://github.com/localgpt-app/reverie) (formerly Reverie),
+a desktop app that builds a 3D world for every song. Everything here is public
+domain under [CC0 1.0](LICENSE).
 
-The assets are kept apart from Reverie's code because they're large and change
-on their own schedule. Reverie bundles them into its download when it's
+The assets are kept apart from Verse's code because they're large and change
+on their own schedule. Verse bundles them into its download when it's
 packaged, so the app never downloads them at runtime.
 
 ## Contents
 
 | Path | What it is |
 |------|------------|
-| `models/<id>/<id>.glb` | One model from [Poly Haven](https://polyhaven.com), packed into the single file Reverie loads |
-| `models/manifest.json` | The list of models Reverie reads: placement data and provenance |
-| `music/` | Four original tracks, `music.json` (the track list Reverie reads) and `NOTICE` |
+| `models/<id>/<id>.glb` | One model from [Poly Haven](https://polyhaven.com), packed into the single file Verse loads |
+| `models/manifest.json` | The list of models Verse reads: placement data and provenance |
+| `music/` | Four original tracks, `music.json` (the track list Verse reads) and `NOTICE` |
 | `fetch_polyhaven.py` | Downloads the original models from Poly Haven (gitignored) and rewrites the manifest |
-| `normalize.py` | Packs each model into its `.glb`, and copies the shipped set into a Reverie checkout |
+| `normalize.py` | Packs each model into its `.glb`, and copies the shipped set into a Verse checkout |
 | `generate_music.py` | Synthesizes the four tracks |
 | `check.py` | Checks that both manifests match the files in the repository; CI runs it on every change |
 
 ### Models
 
-171 models across Reverie's eight worlds, in three placement tiers: hero
+171 models across Verse's eight worlds, in three placement tiers: hero
 landmarks, medium props and ground cover. Each model carries a semantic
-**kind** (`rock`, `tree`, `lamp`, …) — the small stable vocabulary Reverie's
+**kind** (`rock`, `tree`, `lamp`, …) — the small stable vocabulary Verse's
 LLM agent picks from, with the concrete variant resolved per world and rotated
 so repeats differ. The four extended worlds layer their own accents on top of
 their base world's set.
@@ -48,19 +48,22 @@ Each entry in `models/manifest.json` has:
 - `kind`: the semantic kind (`rock`, `tree`, `lamp`, …) — the agent's
   vocabulary; 19 kinds across the pack
 - `tier`: `hero`, `medium` or `scatter`
-- `mood` and `mood_id`: the world, as a position in Reverie's list and as its
+- `mood` and `mood_id`: the world, as a position in Verse's list and as its
   stable id (0 ember-flats, 1 velvet-circuit, 2 tide-gardens,
   3 glass-expanse, 4 cinder-reach, 5 mirage-circuit, 6 abyss-terraces,
-  7 dawn-expanse). If Reverie's worlds change, update `MOOD_IDS` in
+  7 dawn-expanse). If Verse's worlds change, update `MOOD_IDS` in
   `fetch_polyhaven.py` and regenerate.
 - `scale` and `dims`: a per-model adjustment and the native size in metres.
-  Reverie rescales each model to its tier's size.
-- `license`, `author` and `source`: provenance. Reverie's Credits screen shows
+  Verse rescales each model to its tier's size.
+- `license`, `author` and `source`: provenance. Verse's Credits screen shows
   each model's author and license.
 
 The repository holds only what ships: the manifest and the `.glb` files,
-about 480 MB. The original downloads (about 1 GB) are gitignored.
-`fetch_polyhaven.py` fetches
+about 480 MB. The `.glb` and `.mp3` files are stored in
+[Git LFS](https://git-lfs.com) (see `.gitattributes`), so a fresh clone needs
+LFS installed to fetch their contents; without it you get pointer files, which
+is all `check.py` needs, since it only checks that the files exist. The
+original downloads (about 1 GB) are gitignored; `fetch_polyhaven.py` fetches
 them again when a model needs re-packing, and each entry's `source` link
 records where it came from.
 
@@ -75,22 +78,23 @@ records where it came from.
 
 Original compositions synthesized from scratch by `generate_music.py` (pads,
 sine bass, plucked bells, soft percussion and reverb), with no samples or
-recordings. They give Reverie something to play before you import your own
+recordings. They give Verse something to play before you import your own
 music.
 
-## Using with Reverie
+## Using with LocalGPT Verse
 
-Keep this repository beside your Reverie checkout:
+Keep this repository beside your Verse checkout:
 
 ```
-reverie/           the app
-reverie-assets/    this repository
+reverie/                  the app (LocalGPT Verse)
+localgpt-world-assets/    this repository
 ```
 
-- **Packaging.** Reverie's `scripts/bundle.sh` reads this repository from
-  `../reverie-assets` (set `REVERIE_ASSETS` to use another path) and copies
-  the manifest, the `.glb` files and the music into the bundle.
-- **Development.** Reverie loads assets from its own `assets/` folder, where
+- **Packaging.** Verse's `scripts/bundle.sh` reads this repository from
+  `../reverie-assets` (set `REVERIE_ASSETS` to use another path, such as
+  `../localgpt-world-assets`) and copies the manifest, the `.glb` files and
+  the music into the bundle.
+- **Development.** Verse loads assets from its own `assets/` folder, where
   the models and music are gitignored. To fill it, run this from this
   repository:
 
@@ -138,19 +142,19 @@ Everything in this repository is dedicated to the public domain under
 
 - **Models** are by the artists of [Poly Haven](https://polyhaven.com), which
   publishes all its assets under CC0. Credit isn't required, but Poly Haven
-  appreciates it, and Reverie's Credits screen lists every model.
+  appreciates it, and Verse's Credits screen lists every model.
 - **Music and scripts:** to the extent possible under law, the author(s) have
   dedicated all copyright and related and neighboring rights to them to the
   public domain worldwide. They are distributed without any warranty.
 
-Only add CC0 material. This repository has a single license, and Reverie ships
+Only add CC0 material. This repository has a single license, and Verse ships
 these files in an open `assets/` folder beside its binary. Marketplace
 "royalty-free" models (TurboSquid, CGTrader, Fab) are ruled out for a second
 reason: their licenses forbid shipping in an extractable format.
 
 ## In exported worlds
 
-LocalGPT Verse (formerly Reverie) can export a track's world in the shared
+LocalGPT Verse can export a track's world in the shared
 LocalGPT world format (`VERSE_EXPORT_WORLD=<dir>`; see its README). Placed
 models are referenced as `models/<file>` from `models/manifest.json`, relative
 to the world's `assets/` directory, so a world published with its assets — on
