@@ -1,13 +1,15 @@
 # localgpt-world-assets
 
-LocalGPT's world asset pack: the 3D models and starter music bundled with
-[LocalGPT Verse](https://github.com/localgpt-app/reverie) (formerly Reverie),
-a desktop app that builds a 3D world for every song. Everything here is public
-domain under [CC0 1.0](LICENSE).
+LocalGPT's world asset pack: the 3D models and starter music behind
+[LocalGPT Verse](https://github.com/localgpt-app/localgpt) (formerly
+Reverie), the song-world app in the `localgpt` workspace (`crates/verse`),
+which builds a 3D world for every song. Everything here is public domain
+under [CC0 1.0](LICENSE).
 
-The assets are kept apart from Verse's code because they're large and change
-on their own schedule. Verse bundles them into its download when it's
-packaged, so the app never downloads them at runtime.
+The assets are kept apart from the app's code because they're large and
+change on their own schedule. The workspace's `cargo xtask fetch-assets`
+copies them in from a checkout of this repository, so no app downloads
+anything at runtime.
 
 ## Contents
 
@@ -17,7 +19,7 @@ packaged, so the app never downloads them at runtime.
 | `models/manifest.json` | The list of models Verse reads: placement data and provenance |
 | `music/` | Four original tracks, `music.json` (the track list Verse reads) and `NOTICE` |
 | `fetch_polyhaven.py` | Downloads the original models from Poly Haven (gitignored) and rewrites the manifest |
-| `normalize.py` | Packs each model into its `.glb`, and copies the shipped set into a Verse checkout |
+| `normalize.py` | Packs each model into its `.glb`; `--sync` copies the packed set to a folder you name |
 | `generate_music.py` | Synthesizes the four tracks |
 | `check.py` | Checks that both manifests match the files in the repository; CI runs it on every change |
 
@@ -25,8 +27,8 @@ packaged, so the app never downloads them at runtime.
 
 171 models across Verse's eight worlds, in three placement tiers: hero
 landmarks, medium props and ground cover. Each model carries a semantic
-**kind** (`rock`, `tree`, `lamp`, …) — the small stable vocabulary Verse's
-LLM agent picks from, with the concrete variant resolved per world and rotated
+**kind** (`rock`, `tree`, `lamp`, …) — a small stable vocabulary over the
+variants, with the concrete variant resolved per world and rotated
 so repeats differ. The four extended worlds layer their own accents on top of
 their base world's set.
 
@@ -45,8 +47,8 @@ Each entry in `models/manifest.json` has:
 
 - `id` and `name`: the Poly Haven asset id and a display name
 - `file`: the path to the `.glb`, relative to `models/`
-- `kind`: the semantic kind (`rock`, `tree`, `lamp`, …) — the agent's
-  vocabulary; 19 kinds across the pack
+- `kind`: the semantic kind (`rock`, `tree`, `lamp`, …) — a small stable
+  vocabulary over the variants; 19 kinds across the pack
 - `tier`: `hero`, `medium` or `scatter`
 - `mood` and `mood_id`: the world, as a position in Verse's list and as its
   stable id (0 ember-flats, 1 velvet-circuit, 2 tide-gardens,
@@ -59,7 +61,7 @@ Each entry in `models/manifest.json` has:
   each model's author and license.
 
 The repository holds only what ships: the manifest and the `.glb` files,
-about 480 MB. The `.glb` and `.mp3` files are stored in
+about 522 MB. The `.glb` and `.mp3` files are stored in
 [Git LFS](https://git-lfs.com) (see `.gitattributes`), so a fresh clone needs
 LFS installed to fetch their contents; without it you get pointer files, which
 is all `check.py` needs, since it only checks that the files exist. The
@@ -83,30 +85,29 @@ music.
 
 ## Using with LocalGPT Verse
 
-Keep this repository beside your Verse checkout:
+Keep this repository beside your checkout of the `localgpt` workspace,
+whose `crates/verse` is LocalGPT Verse:
 
 ```
-reverie/                  the app (LocalGPT Verse)
+localgpt/                 the workspace (LocalGPT Verse is crates/verse)
 localgpt-world-assets/    this repository
 ```
 
-- **Packaging.** Verse's `scripts/bundle.sh` reads this repository from
-  `../reverie-assets` (set `REVERIE_ASSETS` to use another path, such as
-  `../localgpt-world-assets`) and copies the manifest, the `.glb` files and
-  the music into the bundle.
-- **Development.** Verse loads assets from its own `assets/` folder, where
-  the models and music are gitignored. To fill it, run this from this
-  repository:
-
-  ```sh
-  python3 normalize.py --sync ../reverie/assets/models
-  mkdir -p ../reverie/assets/music
-  cp music/*.mp3 music/music.json music/NOTICE ../reverie/assets/music/
-  ```
-
-  `--sync` only copies files, so it needs neither Node.js nor the original
-  downloads. It empties its destination first, so point it at the `models`
-  folder itself.
+- **Packaging.** `cargo xtask verse-bundle` assembles a portable Verse into
+  `crates/verse/dist/`: the release binary with an `assets/` folder beside
+  it — fonts, the manifest, the `.glb` files and the starter tracks, taken
+  from `VERSE_ASSETS`, else the sibling checkout. The macOS `LocalGPT.app`
+  (`cargo xtask bundle`) carries no pack — that is fetched once per machine,
+  as below — and its four starter tracks come from
+  `LOCALGPT_STARTER_MUSIC`, the sibling checkout, or the pack.
+- **Development.** From the workspace, `cargo xtask fetch-assets` copies the
+  manifest, the `.glb` files it names and the starter tracks from the
+  sibling checkout (`LOCALGPT_WORLD_ASSETS_SRC` names another one) into the
+  pack every LocalGPT app reads (`~/.local/share/localgpt/models/pack`, or
+  `LOCALGPT_WORLD_ASSETS`), and links `crates/verse/assets/models` to it.
+  Run `git lfs pull` here first; the command is safe to re-run after
+  pulling new assets, copying nothing twice. It only copies files, so it
+  needs neither Node.js nor the original downloads.
 
 ## Regenerating
 
@@ -132,7 +133,7 @@ committed files, so re-packing doesn't drift with new releases.
 To add a model, pick a CC0 model on Poly Haven, add a
 `(slug, name, kind, tier, mood, scale)` row to `PACK` in
 `fetch_polyhaven.py` (reusing an existing `kind` when one fits, so the
-agent's vocabulary stays small), run both scripts, and commit the new `.glb`
+vocabulary stays small), run both scripts, and commit the new `.glb`
 with the updated manifest.
 
 ## License
@@ -154,10 +155,12 @@ reason: their licenses forbid shipping in an extractable format.
 
 ## In exported worlds
 
-LocalGPT Verse can export a track's world in the shared
-LocalGPT world format (`VERSE_EXPORT_WORLD=<dir>`; see its README). Placed
-models are referenced as `models/<file>` from `models/manifest.json`, relative
-to the world's `assets/` directory, so a world published with its assets — on
-localgpt.world under `worlds/assets/models/`, or next to Gen's `world.ron` —
-needs only the `.glb` files it names copied there. Everything here is CC0, so
-that redistribution is unrestricted; the music's `NOTICE` travels with it.
+LocalGPT Verse can export a track's world (`VERSE_EXPORT_WORLD=<dir>`; see
+its README): `<track id>.world.json`, the web viewer's format, and
+`<track id>.world.ron`, Gen's save format. Placed models are referenced as
+`models/<file>` from `models/manifest.json`, relative to the world's
+`assets/` directory, so a world published with its assets needs only the
+`.glb` files it names copied there; the localgpt.world gallery's copies are
+web-optimized derivatives of them, kept in this repository's `web/` (see
+`web/README.md`). Everything here is CC0, so that redistribution is
+unrestricted; the music's `NOTICE` travels with it.
